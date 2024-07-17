@@ -8,6 +8,6 @@ The goal of this project is to demonstrate how NEAT can be used to train an AI a
 
 ## Requirements
 
-- Python - 3.11
+- Python - 3.10
 - Pygame
 - NEAT Python
