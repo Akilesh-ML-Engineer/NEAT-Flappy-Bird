@@ -6,16 +6,18 @@ import pygame
 
 
 pygame.init()
+pygame.font.init()
 
 SCREEN_WIDTH = 550
 SCREEN_HEIGHT = 800
 FLOOR = 740
+TEXT_FONT = pygame.font.SysFont('Comic Sans MS', 30)
 
 
 WIN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
 
-
+# Loading the asserts
 pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("asserts", "pipe.png")))
 bg_img = pygame.transform.scale2x(pygame.image.load(os.path.join("asserts", "bg.png")))
 bird_img = [ pygame.transform.scale2x(pygame.image.load(os.path.join("asserts", "bird" + str(x) + ".png"))) for x in range(1, 4) ]
@@ -27,18 +29,19 @@ def blitRotateCenter(surf, image, topleft, angle):
 
     surf.blit(rotated_image, new_rect.topleft)
 
-
-def draw_window(win, bird, base, pipes):
+def draw_window(win, bird, base, pipes, screen_score):
     win.blit(bg_img, (0,0))
     for pipe in pipes:
         pipe.draw(win)
     bird.draw(win)
     base.draw(win)
+    text = TEXT_FONT.render("Score: " + str(screen_score), 1, (255, 255, 255))
+    win.blit(text, (SCREEN_WIDTH - 10 - text.get_width(), 10))
     pygame.display.update()
 
 class Bird:
-    MAX_ROTATION = 25
-    ROT_VEL = 20
+    MAX_ROTATION = 25       # the maximum angle (in degrees) that the bird can tilt upwards.
+    ROT_VEL = 20            # the speed at which the bird tilts downwards when it starts falling.
     IMG = bird_img
     ANIMATION_TIME = 5
 
@@ -60,7 +63,7 @@ class Bird:
     def move(self):
         self.tick_count += 1
 
-        displacement  = self.vel*self.tick_count + 0.5*3*self.tick_count**2
+        displacement  = self.vel*self.tick_count + 0.5*3*self.tick_count**2         # s = ut + 1/2at^2
 
         if displacement >= 16:
             displacement = 16
@@ -79,6 +82,7 @@ class Bird:
     def draw(self, win):
         self.img_count += 1
 
+        # Animating the bird
         if self.img_count < self.ANIMATION_TIME:
             self.img = self.IMG[0]
         elif self.img_count < self.ANIMATION_TIME*2:
@@ -95,6 +99,7 @@ class Bird:
             self.img = self.IMG[1]
             self.img_count = self.ANIMATION_TIME*2
 
+        # win.blit(self.img, (self.x, self.y))
         blitRotateCenter(win, self.img, (self.x, self.y), self.tilt)
 
     def get_mask(self):
@@ -131,7 +136,7 @@ class Pipe:
         bird_mask = bird.get_mask()
         top_mask = pygame.mask.from_surface(self.PIPE_TOP)
         bottom_mask = pygame.mask.from_surface(self.PIPE_BOTTOM)
-      
+
         top_offset = (self.x - bird.x, self.top - round(bird.y))
         bottom_offset = (self.x - bird.x, self.bottom - round(bird.y))
 
@@ -167,7 +172,6 @@ class Base:
         win.blit(self.IMG, (self.x1, self.y))
         win.blit(self.IMG, (self.x2, self.y))
 
-
 def main():
     bird = Bird(230, 350)
     base = Base(730)
@@ -177,6 +181,7 @@ def main():
 
     score = 0
     add_pipe = False
+    add_score = False
 
     run = True
     while run:
@@ -186,35 +191,42 @@ def main():
                 run = False
                 pygame.quit()
                 sys.exit()
-        
+
         # bird.move()
         base.move()
-        removed =[]
+        removed = []
         for pipe in pipes:
             if pipe.collide(bird):
                 pass
+
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 removed.append(pipe)
+
             if not pipe.passed and pipe.x < bird.x:
                 pipe.passed = True
                 add_pipe = True
-            
+                add_score = True
+
             pipe.move()
 
         if add_pipe:
-            score += 1
-            pipes.append(Pipe(700))
-
+            pipes.append(Pipe(600))
         add_pipe = False
+
+        if add_score:
+            score += 1
+            add_score = False
 
         for r in removed:
             pipes.remove(r)
+
+        if bird.y + bird.img.get_height() >= 730:
+            pass
             
-        draw_window(WIN, bird, base, pipes)
+        draw_window(WIN, bird, base, pipes, score)
 
     pygame.quit()
     quit()
-
 
 if __name__ == "__main__":
     main()
